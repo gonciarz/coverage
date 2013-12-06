@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="coverage-from-maven" default="package" basedir="." xmlns:jacoco="antlib:org.jacoco.ant">
+  <property name="build.finalName" value="demo"/>
+  <property name="build.dir" value="target"/>
+  <property name="build.outputDir" value="${build.dir}/classes"/>
+  <property name="build.srcDir" value="src/main/java"/>
+  <property name="build.testOutputDir" value="${build.dir}/test-classes"/>
+  <property name="build.testDir" value="src/test/java"/>
+  <property name="test.reports" value="${build.dir}/test-reports"/>
+  <property name="reporting.outputDirectory" value="${build.dir}/site"/>
+  <property name="libs.dir" value="libs"/>
+  <property name="jacoco.exec.file" value="${build.dir}/jacoco.exec" />
+
+  <path id="build.classpath"/>
+  <path id="build.test.classpath">
+    <pathelement location="${libs.dir}/junit-4.11.jar"/> 
+    <pathelement location="${libs.dir}/hamcrest-all-1.3.jar"/> 
+  </path>
+
+
+  <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+    <classpath path="libs/jacocoant.jar"/>
+  </taskdef>
+    
+  <target name="clean"> 
+    <delete dir="${build.dir}"/>
+  </target>
+
+  <target name="compile"> 
+    <mkdir dir="${build.outputDir}"/>
+    <javac destdir="${build.outputDir}" debug="true" includeantruntime="false">
+      <src>
+        <pathelement location="${build.srcDir}"/>
+      </src>
+      <classpath refid="build.classpath"/>
+    </javac>
+  </target>
+
+  <target name="compile-tests" depends="compile"> 
+    <mkdir dir="${build.testOutputDir}"/>
+    <javac destdir="${build.testOutputDir}" debug="true" includeantruntime="false">
+      <src>
+        <pathelement location="${build.testDir}"/>
+      </src>
+      <classpath>
+        <path refid="build.test.classpath"/>
+        <pathelement location="${build.outputDir}"/>
+      </classpath>
+    </javac>
+  </target>
+
+  <target name="test" depends="compile-tests">
+    <mkdir dir="${test.reports}"/>
+    <jacoco:coverage destfile="${jacoco.exec.file}" output="file">
+    <junit printSummary="yes" haltonerror="false" haltonfailure="false" fork="true" forkmode="once">
+      <formatter type="xml"/>
+      <formatter type="plain" usefile="false"/>
+      <classpath>
+        <path refid="build.test.classpath"/>
+        <pathelement location="${build.outputDir}"/>
+        <pathelement location="${build.testOutputDir}"/>
+      </classpath>
+      <batchtest todir="${test.reports}">
+        <fileset dir="${build.testDir}">
+          <include name="**/**Test**.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+    </jacoco:coverage>
+    
+    <jacoco:report>                           
+        <executiondata>
+            <file file="${jacoco.exec.file}"/>
+        </executiondata>
+                           
+        <structure name="Example Project">
+            <classfiles>
+                <fileset dir="${build.outputDir}"/>
+            </classfiles>
+            <sourcefiles encoding="UTF-8">
+                <fileset dir="${build.srcDir}"/>
+            </sourcefiles>
+        </structure>
+        <html destdir="${test.reports}/jacoco"/>
+    </jacoco:report>
+  </target>
+
+
+
+  <target name="package" depends="compile,test" description="Package the application">
+    <jar jarfile="${build.dir}/${build.finalName}.jar" 
+         compress="true" 
+         index="false" 
+         basedir="${build.outputDir}" 
+         excludes="**/package.html"/>
+  </target>
+
+</project>
+
